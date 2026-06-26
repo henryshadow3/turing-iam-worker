@@ -1,10 +1,10 @@
 BEGIN;
 
 CREATE SCHEMA IF NOT EXISTS turing;
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE turing.tenants (
-    id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     slug        varchar(50) UNIQUE NOT NULL,
     name        varchar(100) NOT NULL,
     redirect_url varchar(255) NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE turing.tenants (
 );
 
 CREATE TABLE turing.roles (
-    id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id   uuid NOT NULL REFERENCES turing.tenants(id) ON DELETE CASCADE,
     name        varchar(50) NOT NULL,
     is_active   bool DEFAULT true NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE turing.roles (
 );
 
 CREATE TABLE turing.user_memberships (
-    id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     uuid NOT NULL REFERENCES brillaint_therapy.users(id) ON DELETE CASCADE,
     tenant_id   uuid NOT NULL REFERENCES turing.tenants(id) ON DELETE CASCADE,
     role_id     uuid NOT NULL REFERENCES turing.roles(id) ON DELETE CASCADE,
@@ -40,7 +40,7 @@ INSERT INTO turing.tenants (id, slug, name, redirect_url) VALUES
   ('00000000-0000-0000-0000-000000000001',
    'brilliant-therapy',
    'Brilliant Therapy',
-   'http://localhost:3001/dashboard');
+   'http://localhost:3000/dashboard');
 
 -- Seed: roles para brilliant-therapy
 INSERT INTO turing.roles (id, tenant_id, name) VALUES
