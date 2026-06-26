@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+# archivos generados por protoc — se generan en el Dockerfile
+src/protos/*_pb2.py
+src/protos/*_pb2_grpc.py

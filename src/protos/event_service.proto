@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package event_service;
+
+service EventService {
+  rpc ProcessEvent(EventRequest) returns (EventResponse);
+  rpc DeserializeEvent(DeserializeRequest) returns (DeserializeResponse);
+  rpc GetSchemaKeys(Empty) returns (SchemaKeysResponse);
+}
+
+message EventRequest {
+  string event = 1;
+  string data = 2;
+}
+
+message EventResponse {
+  bytes response = 1;
+}
+
+message DeserializeRequest {
+  string event = 1;
+  bytes data = 2;
+}
+
+message DeserializeResponse {
+  string json_data = 1;
+}
+
+message Empty {
+}
+
+message SchemaKeysResponse {
+  repeated string keys = 1;
+}

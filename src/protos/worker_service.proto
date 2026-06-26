@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package worker_service;
+
+service GenericWorker {
+  rpc HandleAction (ActionRequest) returns (ActionResponse);
+}
+
+message ActionRequest {
+  string event = 1;
+  bytes payload = 2;
+  bytes context = 3;
+}
+
+message ActionResponse {
+  bool success = 1;
+  string message = 2;
+  bytes data = 3;
+}
