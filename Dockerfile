@@ -16,7 +16,10 @@ RUN python -m grpc_tools.protoc \
     --grpc_python_out=src/protos \
     src/protos/worker_service.proto \
     src/protos/event_service.proto \
-    src/protos/common.proto
+    src/protos/common.proto && \
+    sed -i 's/^import \(.*_pb2\) as/from protos import \1 as/' src/protos/worker_service_pb2_grpc.py && \
+    sed -i 's/^import \(.*_pb2\) as/from protos import \1 as/' src/protos/event_service_pb2_grpc.py && \
+    sed -i 's/^import \(.*_pb2\) as/from protos import \1 as/' src/protos/common_pb2_grpc.py
 
 ENV PYTHONPATH=/app/src
 
