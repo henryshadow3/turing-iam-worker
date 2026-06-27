@@ -97,20 +97,22 @@ class UserPostgresRepository(UserRepository):
         try:
             conn = self.sql_session.get_connection()
             cur = conn.cursor()
+            is_active = data.get("is_active")
             cur.execute("""
                 UPDATE brillaint_therapy.users
-                SET full_name = COALESCE(%s, full_name),
-                    role      = COALESCE(%s, role),
+                SET full_name  = COALESCE(%s, full_name),
+                    role       = COALESCE(%s, role),
+                    is_active  = CASE WHEN %s IS NOT NULL THEN %s ELSE is_active END,
                     updated_at = now()
                 WHERE id = %s
-                RETURNING id, email, full_name, role
-            """, (data.get("full_name"), data.get("role"), user_id))
+                RETURNING id, email, full_name, role, is_active
+            """, (data.get("full_name"), data.get("role"), is_active, is_active, user_id))
             row = cur.fetchone()
             conn.commit()
             cur.close()
             if not row:
                 return Err("USER_NOT_FOUND")
-            return Ok({"id": str(row[0]), "email": row[1], "full_name": row[2], "role": row[3]})
+            return Ok({"id": str(row[0]), "email": row[1], "full_name": row[2], "role": row[3], "is_active": row[4]})
         except Exception as e:
             conn.rollback()
             logger.error(f"UserPostgresRepository.update error: {e}")

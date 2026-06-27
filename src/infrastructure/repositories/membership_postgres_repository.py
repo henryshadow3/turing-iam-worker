@@ -99,3 +99,51 @@ class MembershipPostgresRepository(MembershipRepository):
             conn.rollback()
             logger.error(f"MembershipPostgresRepository.delete error: {e}")
             return Err(str(e))
+
+    def update(self, membership_id: str, role_id: str) -> Result[Dict[str, Any], str]:
+        try:
+            conn = self.sql_session.get_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                UPDATE turing.user_memberships
+                SET role_id = %s
+                WHERE id = %s
+                RETURNING id, user_id, tenant_id, role_id, is_active
+            """, (role_id, membership_id))
+            row = cur.fetchone()
+            conn.commit()
+            cur.close()
+            if not row:
+                return Err("MEMBERSHIP_NOT_FOUND")
+            return Ok({
+                "id":        str(row[0]),
+                "user_id":   str(row[1]),
+                "tenant_id": str(row[2]),
+                "role_id":   str(row[3]),
+                "is_active": row[4],
+            })
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"MembershipPostgresRepository.update error: {e}")
+            return Err(str(e))
+
+    def toggle(self, membership_id: str) -> Result[Dict[str, Any], str]:
+        try:
+            conn = self.sql_session.get_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                UPDATE turing.user_memberships
+                SET is_active = NOT is_active
+                WHERE id = %s
+                RETURNING id, is_active
+            """, (membership_id,))
+            row = cur.fetchone()
+            conn.commit()
+            cur.close()
+            if not row:
+                return Err("MEMBERSHIP_NOT_FOUND")
+            return Ok({"membership_id": str(row[0]), "is_active": row[1]})
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"MembershipPostgresRepository.toggle error: {e}")
+            return Err(str(e))
