@@ -18,6 +18,10 @@ class SQLSessionManager:
                 user=self.settings.postgres_user,
                 password=self.settings.postgres_password,
             )
+            # Autocommit prevents SELECT queries from leaving idle-in-transaction
+            # connections open. Write methods still call commit()/rollback() explicitly,
+            # which works correctly with autocommit=True.
+            self._connection.autocommit = True
         return self._connection
 
     def close(self):
