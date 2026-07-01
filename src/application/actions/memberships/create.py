@@ -12,8 +12,9 @@ def membership_create_action(data: Dict[str, Any], context: Dict[str, Any], cont
         for field in ["user_id", "tenant_id", "role_id"]:
             if not data.get(field):
                 return Err(f"MISSING_FIELD_{field.upper()}")
-        repo = container.create_repository(RepositoryType.MEMBERSHIP)
-        result = repo.create(data)
+        with container.create_sql_session_manager() as sql_session:
+            repo = container.create_repository(RepositoryType.MEMBERSHIP, sql_session)
+            result = repo.create(data)
         if isinstance(result, Ok):
             return Ok(result.ok_value)
         return Err(result.err_value)

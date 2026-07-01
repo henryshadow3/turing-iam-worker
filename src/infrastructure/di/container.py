@@ -16,18 +16,20 @@ class RepositoryType:
 class DependencyContainer:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.sql_session_manager = SQLSessionManager(settings)
 
-    def create_repository(self, repository_name: str):
+    def create_sql_session_manager(self) -> SQLSessionManager:
+        return SQLSessionManager(self.settings)
+
+    def create_repository(self, repository_name: str, sql_session: SQLSessionManager):
         if repository_name == RepositoryType.USER:
-            return UserPostgresRepository(sql_session=self.sql_session_manager)
+            return UserPostgresRepository(sql_session=sql_session)
         if repository_name == RepositoryType.TENANT:
-            return TenantPostgresRepository(sql_session=self.sql_session_manager)
+            return TenantPostgresRepository(sql_session=sql_session)
         if repository_name == RepositoryType.ROLE:
-            return RolePostgresRepository(sql_session=self.sql_session_manager)
+            return RolePostgresRepository(sql_session=sql_session)
         if repository_name == RepositoryType.MEMBERSHIP:
-            return MembershipPostgresRepository(sql_session=self.sql_session_manager)
+            return MembershipPostgresRepository(sql_session=sql_session)
         raise ValueError(f"Repository '{repository_name}' not found in registry.")
 
     def close(self):
-        self.sql_session_manager.close()
+        pass

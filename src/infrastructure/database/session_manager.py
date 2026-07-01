@@ -1,31 +1,54 @@
+from sqlmodel import create_engine, Session as SQLModelSession
+from urllib.parse import quote_plus
 import logging
-import psycopg2
 
 logger = logging.getLogger(__name__)
+
+_engine = None
+
+
+def _get_engine(settings):
+    global _engine
+    if _engine is None:
+        dsn = (
+            f"postgresql+psycopg2://{quote_plus(settings.postgres_user)}:"
+            f"{quote_plus(settings.postgres_password)}@{settings.postgres_host}:"
+            f"{settings.postgres_port}/{settings.postgres_db}"
+        )
+        _engine = create_engine(dsn)
+    return _engine
 
 
 class SQLSessionManager:
     def __init__(self, settings):
-        self.settings = settings
-        self._connection = None
+        self._engine = _get_engine(settings)
+        self._session = None
 
-    def get_connection(self):
-        if self._connection is None or self._connection.closed:
-            self._connection = psycopg2.connect(
-                host=self.settings.postgres_host,
-                port=self.settings.postgres_port,
-                dbname=self.settings.postgres_db,
-                user=self.settings.postgres_user,
-                password=self.settings.postgres_password,
-            )
-            # Autocommit prevents SELECT queries from leaving idle-in-transaction
-            # connections open. Write methods still call commit()/rollback() explicitly,
-            # which works correctly with autocommit=True.
-            self._connection.autocommit = True
-        return self._connection
+    @property
+    def session(self) -> SQLModelSession:
+        return self._session
+
+    def __enter__(self):
+        self._session = SQLModelSession(self._engine)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            if exc_type is not None or self._session.get_transaction() is None:
+                self._session.rollback()
+            else:
+                try:
+                    self._session.commit()
+                except Exception:
+                    self._session.rollback()
+                    raise
+        except Exception as e:
+            logger.error(f"Error during SQL session close: {e}")
+            raise
+        finally:
+            self._session.close()
+        return False
 
     def close(self):
-        if self._connection and not self._connection.closed:
-            self._connection.close()
-            self._connection = None
-            logger.info("PostgreSQL connection closed")
+        if self._session:
+            self._session.close()

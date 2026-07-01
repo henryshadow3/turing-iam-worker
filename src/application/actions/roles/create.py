@@ -12,8 +12,9 @@ def role_create_action(data: Dict[str, Any], context: Dict[str, Any], container)
         for field in ["tenant_id", "name"]:
             if not data.get(field):
                 return Err(f"MISSING_FIELD_{field.upper()}")
-        repo = container.create_repository(RepositoryType.ROLE)
-        result = repo.create(data)
+        with container.create_sql_session_manager() as sql_session:
+            repo = container.create_repository(RepositoryType.ROLE, sql_session)
+            result = repo.create(data)
         if isinstance(result, Ok):
             return Ok(result.ok_value)
         return Err(result.err_value)

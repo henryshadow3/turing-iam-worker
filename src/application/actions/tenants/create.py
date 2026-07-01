@@ -12,8 +12,9 @@ def tenant_create_action(data: Dict[str, Any], context: Dict[str, Any], containe
         for field in ["slug", "name", "redirect_url"]:
             if not data.get(field):
                 return Err(f"MISSING_FIELD_{field.upper()}")
-        repo = container.create_repository(RepositoryType.TENANT)
-        result = repo.create(data)
+        with container.create_sql_session_manager() as sql_session:
+            repo = container.create_repository(RepositoryType.TENANT, sql_session)
+            result = repo.create(data)
         if isinstance(result, Ok):
             return Ok(result.ok_value)
         return Err(result.err_value)

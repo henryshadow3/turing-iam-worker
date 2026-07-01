@@ -1,9 +1,12 @@
 import logging
+import uuid
 from typing import Dict, Any, List, Optional
 from result import Result, Ok, Err
+from sqlmodel import select
 
 from domain.repositories.role_repository import RoleRepository
 from infrastructure.database.session_manager import SQLSessionManager
+from infrastructure.models.iam_models import Role, Tenant
 
 logger = logging.getLogger(__name__)
 
@@ -14,71 +17,66 @@ class RolePostgresRepository(RoleRepository):
 
     def list_by_tenant(self, tenant_id: Optional[str] = None) -> Result[List[Dict[str, Any]], str]:
         try:
-            conn = self.sql_session.get_connection()
-            cur = conn.cursor()
             if tenant_id:
-                cur.execute("""
-                    SELECT r.id, r.tenant_id, r.name, r.is_active, t.name as tenant_name
-                    FROM turing.roles r
-                    JOIN turing.tenants t ON t.id = r.tenant_id
-                    WHERE r.tenant_id = %s
-                    ORDER BY r.name
-                """, (tenant_id,))
+                roles = self.sql_session.session.exec(
+                    select(Role).where(Role.tenant_id == uuid.UUID(tenant_id)).order_by(Role.name)
+                ).all()
             else:
-                cur.execute("""
-                    SELECT r.id, r.tenant_id, r.name, r.is_active, t.name as tenant_name
-                    FROM turing.roles r
-                    JOIN turing.tenants t ON t.id = r.tenant_id
-                    ORDER BY t.name, r.name
-                """)
-            rows = cur.fetchall()
-            cur.close()
-            roles = [
+                roles = self.sql_session.session.exec(
+                    select(Role).order_by(Role.name)
+                ).all()
+
+            tenant_ids = list({r.tenant_id for r in roles})
+            tenants = self.sql_session.session.exec(
+                select(Tenant).where(Tenant.id.in_(tenant_ids))
+            ).all()
+            tenant_name_map = {t.id: t.name for t in tenants}
+
+            result = [
                 {
-                    "id": str(r[0]),
-                    "tenant_id": str(r[1]),
-                    "name": r[2],
-                    "is_active": r[3],
-                    "tenant_name": r[4],
+                    "id": str(r.id),
+                    "tenant_id": str(r.tenant_id),
+                    "name": r.name,
+                    "is_active": r.is_active,
+                    "tenant_name": tenant_name_map.get(r.tenant_id),
                 }
-                for r in rows
+                for r in roles
             ]
-            return Ok(roles)
+            return Ok(result)
         except Exception as e:
             logger.error(f"RolePostgresRepository.list_by_tenant error: {e}")
             return Err(str(e))
 
     def get_by_id(self, role_id: str) -> Result[Dict[str, Any], str]:
         try:
-            conn = self.sql_session.get_connection()
-            cur = conn.cursor()
-            cur.execute("""
-                SELECT id, tenant_id, name, is_active
-                FROM turing.roles WHERE id = %s
-            """, (role_id,))
-            row = cur.fetchone()
-            cur.close()
-            if not row:
+            role = self.sql_session.session.exec(
+                select(Role).where(Role.id == uuid.UUID(role_id))
+            ).first()
+            if not role:
                 return Err("ROLE_NOT_FOUND")
-            return Ok({"id": str(row[0]), "tenant_id": str(row[1]), "name": row[2], "is_active": row[3]})
+            return Ok({
+                "id": str(role.id),
+                "tenant_id": str(role.tenant_id),
+                "name": role.name,
+                "is_active": role.is_active,
+            })
         except Exception as e:
             logger.error(f"RolePostgresRepository.get_by_id error: {e}")
             return Err(str(e))
 
     def create(self, data: Dict[str, Any]) -> Result[Dict[str, Any], str]:
         try:
-            conn = self.sql_session.get_connection()
-            cur = conn.cursor()
-            cur.execute("""
-                INSERT INTO turing.roles (tenant_id, name)
-                VALUES (%s, %s)
-                RETURNING id, tenant_id, name
-            """, (data["tenant_id"], data["name"]))
-            row = cur.fetchone()
-            conn.commit()
-            cur.close()
-            return Ok({"id": str(row[0]), "tenant_id": str(row[1]), "name": row[2]})
+            new_role = Role(
+                tenant_id=uuid.UUID(data["tenant_id"]),
+                name=data["name"],
+            )
+            self.sql_session.session.add(new_role)
+            self.sql_session.session.flush()
+            return Ok({
+                "id": str(new_role.id),
+                "tenant_id": str(new_role.tenant_id),
+                "name": new_role.name,
+            })
         except Exception as e:
-            conn.rollback()
             logger.error(f"RolePostgresRepository.create error: {e}")
             return Err(str(e))

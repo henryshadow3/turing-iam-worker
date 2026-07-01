@@ -10,8 +10,9 @@ logger = logging.getLogger(__name__)
 def role_list_action(data: Dict[str, Any], context: Dict[str, Any], container) -> Result[Any, str]:
     try:
         tenant_id = data.get("tenant_id")
-        repo = container.create_repository(RepositoryType.ROLE)
-        result = repo.list_by_tenant(tenant_id)
+        with container.create_sql_session_manager() as sql_session:
+            repo = container.create_repository(RepositoryType.ROLE, sql_session)
+            result = repo.list_by_tenant(tenant_id)
         if isinstance(result, Ok):
             return Ok({"roles": result.ok_value})
         return Err(result.err_value)

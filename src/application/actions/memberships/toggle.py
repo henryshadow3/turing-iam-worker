@@ -12,8 +12,9 @@ def membership_toggle_action(data: Dict[str, Any], context: Dict[str, Any], cont
         membership_id = data.get("membership_id")
         if not membership_id:
             return Err("MISSING_MEMBERSHIP_ID")
-        repo = container.create_repository(RepositoryType.MEMBERSHIP)
-        result = repo.toggle(membership_id)
+        with container.create_sql_session_manager() as sql_session:
+            repo = container.create_repository(RepositoryType.MEMBERSHIP, sql_session)
+            result = repo.toggle(membership_id)
         if isinstance(result, Ok):
             return Ok(result.ok_value)
         return Err(result.err_value)

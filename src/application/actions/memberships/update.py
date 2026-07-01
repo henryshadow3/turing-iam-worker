@@ -13,8 +13,9 @@ def membership_update_action(data: Dict[str, Any], context: Dict[str, Any], cont
         role_id = data.get("role_id")
         if not membership_id or not role_id:
             return Err("MISSING_REQUIRED_FIELDS")
-        repo = container.create_repository(RepositoryType.MEMBERSHIP)
-        result = repo.update(membership_id, role_id)
+        with container.create_sql_session_manager() as sql_session:
+            repo = container.create_repository(RepositoryType.MEMBERSHIP, sql_session)
+            result = repo.update(membership_id, role_id)
         if isinstance(result, Ok):
             return Ok(result.ok_value)
         return Err(result.err_value)
