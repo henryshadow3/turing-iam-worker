@@ -71,7 +71,7 @@ Gateway --> HandleAction(event_name, payload_bytes, context_bytes)
 - **Railway-oriented error handling**: all repository methods and action functions return `Ok(value)` or `Err(str)` from the `result` library. Never raise exceptions as flow control.
 - **Soft deletes**: membership "delete" (`iam.membership.delete.in`) sets `is_active = False` — it does not physically remove rows.
 - **Password hashing**: done in the repository layer (`bcrypt`), not in the domain entity.
-- **Database schemas**: the `turing` schema owns `tenants`, `roles`, `user_memberships`; the `brillaint_therapy` schema (typo is in source) owns `users`.
+- **Database schemas**: the `turing` schema owns `users`, `tenants`, `roles`, `user_memberships` (la identidad de usuario es global — ver migración 003); the `brillaint_therapy` schema (typo is in source) owns the business tables.
 - **Registering a new event**: add the action function in `application/actions/`, then register it in the `ACTIONS` dict in `application/events_manager.py`.
 
 ## Environment variables
