@@ -12,6 +12,9 @@ from application.actions.memberships.create import membership_create_action
 from application.actions.memberships.delete import membership_delete_action
 from application.actions.memberships.update import membership_update_action
 from application.actions.memberships.toggle import membership_toggle_action
+from application.actions.requests.list import request_list_action
+from application.actions.requests.approve import request_approve_action
+from application.actions.requests.reject import request_reject_action
 
 ACTIONS = {
     "iam.user.list.in":             user_list_action,
@@ -28,6 +31,9 @@ ACTIONS = {
     "iam.membership.delete.in":     membership_delete_action,
     "iam.membership.update.in":     membership_update_action,
     "iam.membership.toggle.in":     membership_toggle_action,
+    "iam.request.list.in":          request_list_action,
+    "iam.request.approve.in":       request_approve_action,
+    "iam.request.reject.in":        request_reject_action,
 }
 
 DOMAIN_EVENTS = {
@@ -45,4 +51,7 @@ DOMAIN_EVENTS = {
     "iam.membership.delete.in":     ["iam.membership.deleted"],
     "iam.membership.update.in":     ["iam.membership.updated"],
     "iam.membership.toggle.in":     ["iam.membership.toggled"],
+    "iam.request.list.in":          [],
+    "iam.request.approve.in":       ["iam.request.approved", "iam.membership.created"],
+    "iam.request.reject.in":        ["iam.request.rejected"],
 }

@@ -4,13 +4,15 @@ from infrastructure.repositories.user_postgres_repository import UserPostgresRep
 from infrastructure.repositories.tenant_postgres_repository import TenantPostgresRepository
 from infrastructure.repositories.role_postgres_repository import RolePostgresRepository
 from infrastructure.repositories.membership_postgres_repository import MembershipPostgresRepository
+from infrastructure.repositories.access_request_postgres_repository import AccessRequestPostgresRepository
 
 
 class RepositoryType:
-    USER       = "USER"
-    TENANT     = "TENANT"
-    ROLE       = "ROLE"
-    MEMBERSHIP = "MEMBERSHIP"
+    USER           = "USER"
+    TENANT         = "TENANT"
+    ROLE           = "ROLE"
+    MEMBERSHIP     = "MEMBERSHIP"
+    ACCESS_REQUEST = "ACCESS_REQUEST"
 
 
 class DependencyContainer:
@@ -29,6 +31,8 @@ class DependencyContainer:
             return RolePostgresRepository(sql_session=sql_session)
         if repository_name == RepositoryType.MEMBERSHIP:
             return MembershipPostgresRepository(sql_session=sql_session)
+        if repository_name == RepositoryType.ACCESS_REQUEST:
+            return AccessRequestPostgresRepository(sql_session=sql_session)
         raise ValueError(f"Repository '{repository_name}' not found in registry.")
 
     def close(self):

@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field
 from sqlalchemy import Column, DateTime
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 
@@ -56,3 +56,18 @@ class UserMembership(SQLModel, table=True):
     role_id: uuid.UUID
     is_active: bool = Field(default=True)
     created_at: Optional[datetime] = None
+
+
+class AccessRequest(SQLModel, table=True):
+    __tablename__ = "access_requests"
+    __table_args__ = {"schema": "turing"}
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID
+    tenant_id: uuid.UUID
+    requested_role_id: Optional[uuid.UUID] = None
+    status: str = Field(default="pending")  # pending | approved | rejected
+    note: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    resolved_at: Optional[datetime] = None
+    resolved_by: Optional[uuid.UUID] = None

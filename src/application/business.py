@@ -11,7 +11,7 @@ PLATFORM_SUPERADMIN = "superadmin"
 # Verbos de escritura que MODIFICAN el estado IAM. Solo el superadmin de
 # plataforma puede ejecutarlos. Las lecturas (list/get) quedan abiertas a
 # cualquier usuario autenticado. El evento tiene forma "iam.<recurso>.<verbo>.in".
-IAM_WRITE_VERBS = {"create", "update", "delete", "disable", "toggle"}
+IAM_WRITE_VERBS = {"create", "update", "delete", "disable", "toggle", "approve", "reject"}
 
 
 def _requires_superadmin(event: str) -> bool:
