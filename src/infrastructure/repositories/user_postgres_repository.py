@@ -66,7 +66,7 @@ class UserPostgresRepository(UserRepository):
                 email=data["email"],
                 password_hash=hashed,
                 full_name=data["full_name"],
-                role=data.get("role", "terapeuta"),
+                role=data.get("role", "user"),
                 is_active=True,
             )
             self.sql_session.session.add(new_user)

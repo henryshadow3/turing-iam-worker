@@ -13,7 +13,7 @@ class User(SQLModel, table=True):
     email: str
     password_hash: str
     full_name: str
-    role: str = Field(default="terapeuta")
+    role: str = Field(default="user")  # rol de PLATAFORMA (user/analista/developer/admin/superadmin)
     is_active: bool = Field(default=True)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
