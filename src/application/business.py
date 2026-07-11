@@ -13,6 +13,17 @@ PLATFORM_SUPERADMIN = "superadmin"
 # cualquier usuario autenticado. El evento tiene forma "iam.<recurso>.<verbo>.in".
 IAM_WRITE_VERBS = {"create", "update", "delete", "disable", "toggle", "approve", "reject"}
 
+# Eventos de gestión de miembros del PROPIO tenant: los ejecuta el admin del
+# tenant (context["role"]), no el superadmin de plataforma. Se evalúan ANTES
+# de la regla superadmin (iam.member.toggle.in caería en IAM_WRITE_VERBS).
+# Las acciones limitan el alcance al tenant de context["tenant_id"].
+TENANT_ADMIN_ROLES  = ("admin", "administrador")
+TENANT_ADMIN_EVENTS = {
+    "iam.member.list.in",
+    "iam.member.update_role.in",
+    "iam.member.toggle.in",
+}
+
 
 def _requires_superadmin(event: str) -> bool:
     parts = event.split(".")
@@ -34,9 +45,20 @@ def business_logic(data: dict, context: dict, container) -> dict:
             logger.error(f"No action registered for event: {event}")
             return _error_response("EVENT_NOT_FOUND")
 
+        # Gestión de miembros del propio tenant: exige rol admin del tenant
+        # activo (no superadmin de plataforma).
+        if event in TENANT_ADMIN_EVENTS:
+            tenant_role = ((context or {}).get("role") or "").lower()
+            tenant_id   = (context or {}).get("tenant_id") or ""
+            if tenant_role not in TENANT_ADMIN_ROLES or not tenant_id:
+                logger.warning(
+                    f"Forbidden tenant-admin event {event}: role='{tenant_role}', tenant='{tenant_id}'"
+                )
+                return _error_response("FORBIDDEN_REQUIRES_TENANT_ADMIN")
+
         # Autorización de plataforma: las escrituras IAM exigen superadmin.
         # Ser admin de un tenant NO da acceso a operar el IAM.
-        if _requires_superadmin(event):
+        elif _requires_superadmin(event):
             platform_role = (context or {}).get("platform_role") or ""
             if platform_role != PLATFORM_SUPERADMIN:
                 logger.warning(

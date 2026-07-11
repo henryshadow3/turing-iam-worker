@@ -10,6 +10,10 @@ from infrastructure.models.iam_models import Role, Tenant
 
 logger = logging.getLogger(__name__)
 
+# Roles cuyo nombre autoriza como admin del tenant (dashboard-back ADMIN_ROLES).
+# Desactivarlos dejaría al tenant sin administradores (lockout).
+PROTECTED_ROLE_NAMES = ("admin", "administrador")
+
 
 class RolePostgresRepository(RoleRepository):
     def __init__(self, sql_session: SQLSessionManager):
@@ -79,4 +83,25 @@ class RolePostgresRepository(RoleRepository):
             })
         except Exception as e:
             logger.error(f"RolePostgresRepository.create error: {e}")
+            return Err(str(e))
+
+    def toggle(self, role_id: str) -> Result[Dict[str, Any], str]:
+        try:
+            role = self.sql_session.session.exec(
+                select(Role).where(Role.id == uuid.UUID(role_id))
+            ).first()
+            if not role:
+                return Err("ROLE_NOT_FOUND")
+            if role.is_active and role.name.lower() in PROTECTED_ROLE_NAMES:
+                return Err("CANNOT_DISABLE_ADMIN_ROLE")
+            role.is_active = not role.is_active
+            self.sql_session.session.add(role)
+            self.sql_session.session.flush()
+            return Ok({
+                "role_id":   str(role.id),
+                "name":      role.name,
+                "is_active": role.is_active,
+            })
+        except Exception as e:
+            logger.error(f"RolePostgresRepository.toggle error: {e}")
             return Err(str(e))

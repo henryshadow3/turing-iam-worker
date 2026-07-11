@@ -16,3 +16,11 @@ class MembershipRepository(ABC):
     @abstractmethod
     def delete(self, membership_id: str) -> Result[Dict[str, Any], str]:
         pass
+
+    @abstractmethod
+    def get_by_id(self, membership_id: str) -> Result[Dict[str, Any], str]:
+        pass
+
+    @abstractmethod
+    def list_by_tenant(self, tenant_id: str) -> Result[List[Dict[str, Any]], str]:
+        pass

@@ -75,6 +75,18 @@ class AccessRequestPostgresRepository:
             if not final_role_id:
                 return Err("MISSING_ROLE_ID")
 
+            # El rol asignado debe existir, pertenecer al tenant de la solicitud
+            # y estar activo (los roles desactivados no se pueden asignar).
+            role = session.exec(
+                select(Role).where(Role.id == uuid.UUID(final_role_id))
+            ).first()
+            if not role:
+                return Err("ROLE_NOT_FOUND")
+            if role.tenant_id != req.tenant_id:
+                return Err("ROLE_TENANT_MISMATCH")
+            if not role.is_active:
+                return Err("ROLE_INACTIVE")
+
             # ¿Ya existe membresía en ese tenant? (UNIQUE user_id, tenant_id)
             existing = session.exec(
                 select(UserMembership).where(

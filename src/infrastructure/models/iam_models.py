@@ -37,7 +37,8 @@ class Tenant(SQLModel, table=True):
     name: str
     redirect_url: str
     is_active: bool = Field(default=True)
-    created_at: Optional[datetime] = None
+    # NOT NULL en BD: sin default_factory SQLModel manda None explícito
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Role(SQLModel, table=True):
@@ -48,7 +49,8 @@ class Role(SQLModel, table=True):
     tenant_id: uuid.UUID
     name: str
     is_active: bool = Field(default=True)
-    created_at: Optional[datetime] = None
+    # NOT NULL en BD: sin default_factory SQLModel manda None explícito
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class UserMembership(SQLModel, table=True):

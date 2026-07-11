@@ -16,3 +16,7 @@ class RoleRepository(ABC):
     @abstractmethod
     def create(self, data: Dict[str, Any]) -> Result[Dict[str, Any], str]:
         pass
+
+    @abstractmethod
+    def toggle(self, role_id: str) -> Result[Dict[str, Any], str]:
+        pass
