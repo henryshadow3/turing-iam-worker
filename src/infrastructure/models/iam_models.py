@@ -17,6 +17,11 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    email_verified: bool = Field(default=False)
+    email_verification_code: Optional[str] = None
+    email_verification_code_expires: Optional[datetime] = Field(
+        default=None, sa_column=Column(DateTime(timezone=True))
+    )
     reset_password_token: Optional[str] = None
     reset_password_expires: Optional[datetime] = Field(
         default=None, sa_column=Column(DateTime(timezone=True))
@@ -55,7 +60,7 @@ class UserMembership(SQLModel, table=True):
     tenant_id: uuid.UUID
     role_id: uuid.UUID
     is_active: bool = Field(default=True)
-    created_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class AccessRequest(SQLModel, table=True):

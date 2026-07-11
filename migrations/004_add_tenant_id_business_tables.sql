@@ -19,7 +19,7 @@ ALTER TABLE brillaint_therapy.activity_catalog
 
 DO $$
 DECLARE
-    default_tenant uuid := '00000000-0000-0000-0000-000000000001';
+    default_tenant uuid := '951ed44f-2c83-4dfc-af59-0feb84beffff';
     t text;
 BEGIN
     FOREACH t IN ARRAY ARRAY['students', 'planning_registry', 'activity_catalog']

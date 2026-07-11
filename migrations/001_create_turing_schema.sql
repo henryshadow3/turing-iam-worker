@@ -37,16 +37,16 @@ CREATE INDEX idx_roles_tenant       ON turing.roles(tenant_id);
 
 -- Seed: tenant brilliant-therapy
 INSERT INTO turing.tenants (id, slug, name, redirect_url) VALUES
-  ('00000000-0000-0000-0000-000000000001',
+  ('951ed44f-2c83-4dfc-af59-0feb84beffff',
    'brilliant-therapy',
    'Brilliant Therapy',
    'http://localhost:3000/dashboard');
 
 -- Seed: roles para brilliant-therapy
 INSERT INTO turing.roles (id, tenant_id, name) VALUES
-  ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 'admin'),
-  ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', 'terapeuta'),
-  ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000001', 'padre'),
-  ('00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000001', 'alumno');
+  ('98492cd2-d487-46aa-9e63-2f5063d9bf3a', '951ed44f-2c83-4dfc-af59-0feb84beffff', 'admin'),
+  ('150a8019-9193-4b84-8994-bb6decae1ac1', '951ed44f-2c83-4dfc-af59-0feb84beffff', 'terapeuta'),
+  ('69818f7d-9568-458e-b215-c8c9f0bbaf60', '951ed44f-2c83-4dfc-af59-0feb84beffff', 'padre'),
+  ('db2fdc60-9516-41b4-9ed7-fc1e55100810', '951ed44f-2c83-4dfc-af59-0feb84beffff', 'alumno');
 
 COMMIT;

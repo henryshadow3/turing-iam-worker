@@ -9,3 +9,4 @@ venv/
 # archivos generados por protoc — se generan en el Dockerfile
 src/protos/*_pb2.py
 src/protos/*_pb2_grpc.py
+.vscode/
