@@ -41,9 +41,12 @@ class MembershipPostgresRepository(MembershipRepository):
             for m in memberships
         ]
 
-    def list_all(self) -> Result[List[Dict[str, Any]], str]:
+    def list_all(self, user_id: str = None) -> Result[List[Dict[str, Any]], str]:
         try:
-            memberships = self.sql_session.session.exec(select(UserMembership)).all()
+            stmt = select(UserMembership)
+            if user_id:
+                stmt = stmt.where(UserMembership.user_id == uuid.UUID(user_id))
+            memberships = self.sql_session.session.exec(stmt).all()
             return Ok(self._enrich(memberships))
         except Exception as e:
             logger.error(f"MembershipPostgresRepository.list_all error: {e}")

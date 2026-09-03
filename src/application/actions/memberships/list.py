@@ -11,7 +11,7 @@ def membership_list_action(data: Dict[str, Any], context: Dict[str, Any], contai
     try:
         with container.create_sql_session_manager() as sql_session:
             repo = container.create_repository(RepositoryType.MEMBERSHIP, sql_session)
-            result = repo.list_all()
+            result = repo.list_all(user_id=data.get("user_id"))
         if isinstance(result, Ok):
             return Ok({"memberships": result.ok_value})
         return Err(result.err_value)
