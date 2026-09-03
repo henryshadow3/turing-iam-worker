@@ -19,6 +19,19 @@ from application.actions.requests.reject import request_reject_action
 from application.actions.members.list import member_list_action
 from application.actions.members.update_role import member_update_role_action
 from application.actions.members.toggle import member_toggle_action
+from application.actions.applications.list import application_list_action
+from application.actions.applications.toggle import application_toggle_action
+from application.actions.tenant_applications.list import tenant_application_list_action
+from application.actions.tenant_applications.create import tenant_application_create_action
+from application.actions.tenant_applications.toggle import tenant_application_toggle_action
+from application.actions.application_memberships.list import application_membership_list_action
+from application.actions.application_memberships.create import application_membership_create_action
+from application.actions.application_memberships.update import application_membership_update_action
+from application.actions.application_memberships.toggle import application_membership_toggle_action
+from application.actions.tenant_application_routes.list import tenant_application_route_list_action
+from application.actions.tenant_application_routes.create import tenant_application_route_create_action
+from application.actions.tenant_application_routes.update import tenant_application_route_update_action
+from application.actions.tenant_application_routes.toggle import tenant_application_route_toggle_action
 
 ACTIONS = {
     "iam.user.list.in":             user_list_action,
@@ -43,6 +56,25 @@ ACTIONS = {
     "iam.member.list.in":           member_list_action,
     "iam.member.update_role.in":    member_update_role_action,
     "iam.member.toggle.in":         member_toggle_action,
+    # ─────────────────────────────────────────────────────────────────
+    # T-SP4-T2-I1-W5 — Aplicaciones, tenant-aplicaciones, application
+    # memberships (acceso real) y rutas. Familia SEPARADA de
+    # iam.membership.* (afiliación pura) -- ver ADR 0001 y
+    # docs/sp4-t2-i1-w5-contratos-test-report.md.
+    # ─────────────────────────────────────────────────────────────────
+    "iam.application.list.in":              application_list_action,
+    "iam.application.toggle.in":            application_toggle_action,
+    "iam.tenant_application.list.in":       tenant_application_list_action,
+    "iam.tenant_application.create.in":     tenant_application_create_action,
+    "iam.tenant_application.toggle.in":     tenant_application_toggle_action,
+    "iam.application_membership.list.in":   application_membership_list_action,
+    "iam.application_membership.create.in": application_membership_create_action,
+    "iam.application_membership.update.in": application_membership_update_action,
+    "iam.application_membership.toggle.in": application_membership_toggle_action,
+    "iam.tenant_application_route.list.in":   tenant_application_route_list_action,
+    "iam.tenant_application_route.create.in": tenant_application_route_create_action,
+    "iam.tenant_application_route.update.in": tenant_application_route_update_action,
+    "iam.tenant_application_route.toggle.in": tenant_application_route_toggle_action,
 }
 
 DOMAIN_EVENTS = {
@@ -70,4 +102,19 @@ DOMAIN_EVENTS = {
     "iam.member.list.in":           [],
     "iam.member.update_role.in":    [],
     "iam.member.toggle.in":         [],
+    # Igual que el resto de la familia iam.*: sin domain events propios, la
+    # respuesta se serializa como "<event>.out" (ver IAMWorkerService.HandleAction).
+    "iam.application.list.in":              [],
+    "iam.application.toggle.in":            ["iam.application.toggled"],
+    "iam.tenant_application.list.in":       [],
+    "iam.tenant_application.create.in":     ["iam.tenant_application.created"],
+    "iam.tenant_application.toggle.in":     ["iam.tenant_application.toggled"],
+    "iam.application_membership.list.in":   [],
+    "iam.application_membership.create.in": ["iam.application_membership.created"],
+    "iam.application_membership.update.in": ["iam.application_membership.updated"],
+    "iam.application_membership.toggle.in": ["iam.application_membership.toggled"],
+    "iam.tenant_application_route.list.in":   [],
+    "iam.tenant_application_route.create.in": ["iam.tenant_application_route.created"],
+    "iam.tenant_application_route.update.in": ["iam.tenant_application_route.updated"],
+    "iam.tenant_application_route.toggle.in": ["iam.tenant_application_route.toggled"],
 }
