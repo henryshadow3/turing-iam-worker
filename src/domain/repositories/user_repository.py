@@ -1,12 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from result import Result
 
 
 class UserRepository(ABC):
 
     @abstractmethod
-    def list_all(self) -> Result[List[Dict[str, Any]], str]:
+    def list_all(
+        self,
+        search: Optional[str] = None,
+        role: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+    ) -> Result[Dict[str, Any], str]:
         pass
 
     @abstractmethod

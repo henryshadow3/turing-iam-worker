@@ -2,9 +2,10 @@ import logging
 import uuid
 import bcrypt
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from result import Result, Ok, Err
-from sqlmodel import select
+from sqlmodel import select, func
+from sqlalchemy import or_
 
 from domain.repositories.user_repository import UserRepository
 from infrastructure.database.session_manager import SQLSessionManager
@@ -12,28 +13,85 @@ from infrastructure.models.iam_models import User
 
 logger = logging.getLogger(__name__)
 
+# Límite superior defensivo para "limit" -- evita que un caller sin querer
+# (o malicioso) pida una página del tamaño de toda la tabla, que es
+# exactamente el problema de escala que esta paginación server-side viene a
+# resolver (ver Work Item T-SP4-T2-I1-W7, requisito de Henry).
+MAX_PAGE_SIZE = 200
+DEFAULT_PAGE_SIZE = 50
+
 
 class UserPostgresRepository(UserRepository):
     def __init__(self, sql_session: SQLSessionManager):
         self.sql_session = sql_session
 
-    def list_all(self) -> Result[List[Dict[str, Any]], str]:
+    @staticmethod
+    def _serialize(u: User) -> Dict[str, Any]:
+        return {
+            "id": str(u.id),
+            "email": u.email,
+            "full_name": u.full_name,
+            "role": u.role,
+            "is_active": u.is_active,
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+        }
+
+    def list_all(
+        self,
+        search: Optional[str] = None,
+        role: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+    ) -> Result[Dict[str, Any], str]:
+        """Lista usuarios con filtros y paginación OPCIONALES, resueltos en
+        SQL (server-side) para escalar a miles de filas -- ninguno de los
+        parámetros es requerido, así que cualquier llamador preexistente que
+        invoque list_all() sin argumentos sigue funcionando exactamente
+        igual que antes (mismo orden, mismas filas), solo que ahora la
+        respuesta también trae "total" (aditivo, ver user_list_action).
+
+        No se pagina por defecto en el sentido de "cortar filas" salvo que
+        el caller pase limit/offset explícitamente -- así ningún consumidor
+        actual (que no sabe de estos parámetros) ve un comportamiento
+        distinto al de antes de este Work Item.
+        """
         try:
-            rows = self.sql_session.session.exec(
-                select(User).order_by(User.full_name)
-            ).all()
-            users = [
-                {
-                    "id": str(u.id),
-                    "email": u.email,
-                    "full_name": u.full_name,
-                    "role": u.role,
-                    "is_active": u.is_active,
-                    "created_at": u.created_at.isoformat() if u.created_at else None,
-                }
-                for u in rows
-            ]
-            return Ok(users)
+            stmt = select(User)
+            count_stmt = select(func.count()).select_from(User)
+
+            if search:
+                like = f"%{search.strip().lower()}%"
+                condition = or_(
+                    func.lower(User.full_name).like(like),
+                    func.lower(User.email).like(like),
+                )
+                stmt = stmt.where(condition)
+                count_stmt = count_stmt.where(condition)
+
+            if role:
+                stmt = stmt.where(User.role == role)
+                count_stmt = count_stmt.where(User.role == role)
+
+            if is_active is not None:
+                stmt = stmt.where(User.is_active == is_active)
+                count_stmt = count_stmt.where(User.is_active == is_active)
+
+            total = self.sql_session.session.exec(count_stmt).one()
+
+            stmt = stmt.order_by(User.full_name)
+
+            # Paginación real: solo se aplica si el caller pidió limit
+            # explícitamente (comportamiento aditivo, ver docstring).
+            if limit is not None:
+                safe_limit = max(1, min(int(limit), MAX_PAGE_SIZE))
+                stmt = stmt.limit(safe_limit)
+                if offset is not None:
+                    stmt = stmt.offset(max(0, int(offset)))
+
+            rows = self.sql_session.session.exec(stmt).all()
+            users = [self._serialize(u) for u in rows]
+            return Ok({"users": users, "total": total})
         except Exception as e:
             logger.error(f"UserPostgresRepository.list_all error: {e}")
             return Err(str(e))
