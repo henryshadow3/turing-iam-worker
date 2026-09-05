@@ -6,7 +6,8 @@ from result import Result
 class RoleRepository(ABC):
 
     @abstractmethod
-    def list_by_tenant(self, tenant_id: Optional[str] = None) -> Result[List[Dict[str, Any]], str]:
+    def list_by_tenant(self, tenant_id: Optional[str] = None,
+                        application_id: Optional[str] = None) -> Result[List[Dict[str, Any]], str]:
         pass
 
     @abstractmethod
