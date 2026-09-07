@@ -25,3 +25,7 @@ class ApplicationMembershipRepository(ABC):
     @abstractmethod
     def toggle(self, application_membership_id: str) -> Result[Dict[str, Any], str]:
         pass
+
+    @abstractmethod
+    def toggle_by_application(self, user_id: str, application_id: str) -> Result[Dict[str, Any], str]:
+        pass

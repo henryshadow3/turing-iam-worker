@@ -243,3 +243,66 @@ class ApplicationMembershipPostgresRepository(ApplicationMembershipRepository):
         except Exception as e:
             logger.error(f"ApplicationMembershipPostgresRepository.toggle error: {e}")
             return Err(str(e))
+
+    def toggle_by_application(self, user_id: str, application_id: str) -> Result[Dict[str, Any], str]:
+        """iam.user.toggle_application_access.in (T-SP4-T2-I1-W12) -- alterna
+        de UN JALÓN, en una sola transacción, TODOS los ApplicationMembership
+        de un usuario para una aplicación (cruzando TODOS los tenants donde
+        tiene acceso a esa app, vía tenant_applications.application_id) --
+        no un tenant a la vez.
+
+        Semántica del toggle (decidida por ser la más simple y predecible,
+        ver test report): si el usuario tiene AL MENOS UN acceso activo a
+        esta app, el toggle DESACTIVA todos. Si no tiene ninguno activo
+        (todos inactivos, o no tiene ninguna fila), el toggle ACTIVA todas
+        las filas EXISTENTES (nunca crea accesos nuevos -- esto solo
+        prende/apaga accesos que ya existen, otorgar un acceso nuevo sigue
+        siendo iam.application_membership.create.in).
+
+        Sin snapshot (a diferencia de MembershipSuspensionPostgresRepository
+        de W11): ahí hacía falta snapshot porque la restauración debe
+        reactivar EXACTAMENTE las filas que estaban activas antes de un
+        apagón que también toca user_memberships (afectando dos tablas con
+        semántica de restauración exacta). Aquí el toggle es de una sola
+        tabla, con un estado binario efectivo claro (¿hay algo activo o
+        no?) -- guardar snapshot añadiría complejidad sin un caso de uso
+        real que lo requiera (revertir un toggle por-app simplemente es
+        volver a darle clic al mismo botón, que ya invierte el estado
+        correctamente sin snapshot).
+        """
+        try:
+            uid = uuid.UUID(user_id)
+            app_uuid = uuid.UUID(application_id)
+
+            rows = self.sql_session.session.exec(
+                select(ApplicationMembership)
+                .join(
+                    TenantApplication,
+                    TenantApplication.id == ApplicationMembership.tenant_application_id,
+                )
+                .where(
+                    ApplicationMembership.user_id == uid,
+                    TenantApplication.application_id == app_uuid,
+                )
+            ).all()
+
+            if not rows:
+                return Err("NO_APPLICATION_ACCESS_FOR_USER")
+
+            any_active = any(r.is_active for r in rows)
+            new_state = not any_active
+
+            for row in rows:
+                row.is_active = new_state
+                self.sql_session.session.add(row)
+
+            self.sql_session.session.flush()
+            return Ok({
+                "user_id": str(uid),
+                "application_id": str(app_uuid),
+                "is_active": new_state,
+                "affected_count": len(rows),
+            })
+        except Exception as e:
+            logger.error(f"ApplicationMembershipPostgresRepository.toggle_by_application error: {e}")
+            return Err(str(e))

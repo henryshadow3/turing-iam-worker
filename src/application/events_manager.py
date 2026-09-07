@@ -28,6 +28,7 @@ from application.actions.application_memberships.list import application_members
 from application.actions.application_memberships.create import application_membership_create_action
 from application.actions.application_memberships.update import application_membership_update_action
 from application.actions.application_memberships.toggle import application_membership_toggle_action
+from application.actions.application_memberships.toggle_by_application import application_membership_toggle_by_application_action
 from application.actions.tenant_application_routes.list import tenant_application_route_list_action
 from application.actions.tenant_application_routes.create import tenant_application_route_create_action
 from application.actions.tenant_application_routes.update import tenant_application_route_update_action
@@ -90,6 +91,16 @@ ACTIONS = {
     "iam.user.suspend_membership.in":            membership_suspend_action,
     "iam.user.restore_membership.in":             membership_restore_action,
     "iam.user.membership_suspension_status.in":   membership_suspension_status_action,
+    # ─────────────────────────────────────────────────────────────────
+    # T-SP4-T2-I1-W12 — Toggle de acceso por-aplicación. Alterna de un
+    # jalón, en una sola transacción, TODOS los application_memberships de
+    # un usuario para una aplicación del catálogo (todos los tenants donde
+    # tiene acceso a ESA app específica) -- distinto del toggle existente
+    # iam.application_membership.toggle.in, que solo afecta una fila
+    # (un tenant a la vez). Ver Users.jsx (tabs por aplicación) y
+    # ApplicationMembershipPostgresRepository.toggle_by_application.
+    # ─────────────────────────────────────────────────────────────────
+    "iam.user.toggle_application_access.in":     application_membership_toggle_by_application_action,
 }
 
 DOMAIN_EVENTS = {
@@ -137,4 +148,7 @@ DOMAIN_EVENTS = {
     "iam.user.suspend_membership.in":           [],
     "iam.user.restore_membership.in":            [],
     "iam.user.membership_suspension_status.in":  [],
+    # Igual que el resto de la familia iam.*: sin domain events propios, la
+    # respuesta se serializa como "<event>.out".
+    "iam.user.toggle_application_access.in":     [],
 }
