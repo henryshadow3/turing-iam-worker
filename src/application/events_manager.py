@@ -32,6 +32,9 @@ from application.actions.tenant_application_routes.list import tenant_applicatio
 from application.actions.tenant_application_routes.create import tenant_application_route_create_action
 from application.actions.tenant_application_routes.update import tenant_application_route_update_action
 from application.actions.tenant_application_routes.toggle import tenant_application_route_toggle_action
+from application.actions.membership_suspension.suspend import membership_suspend_action
+from application.actions.membership_suspension.restore import membership_restore_action
+from application.actions.membership_suspension.status import membership_suspension_status_action
 
 ACTIONS = {
     "iam.user.list.in":             user_list_action,
@@ -75,6 +78,18 @@ ACTIONS = {
     "iam.tenant_application_route.create.in": tenant_application_route_create_action,
     "iam.tenant_application_route.update.in": tenant_application_route_update_action,
     "iam.tenant_application_route.toggle.in": tenant_application_route_toggle_action,
+    # ─────────────────────────────────────────────────────────────────
+    # T-SP4-T2-I1-W11 — Interruptor global de membresía. Suspende/restaura
+    # de un jalón TODAS las afiliaciones (user_memberships) y accesos
+    # (application_memberships) activos de un usuario, con snapshot en
+    # turing.membership_suspensions para restaurar el estado previo EXACTO
+    # (nunca reactivar filas que ya estaban inactivas antes del apagón). NO
+    # toca turing.users.is_active. Ver migración 019 en db-turing y
+    # MembershipSuspensionPostgresRepository.
+    # ─────────────────────────────────────────────────────────────────
+    "iam.user.suspend_membership.in":            membership_suspend_action,
+    "iam.user.restore_membership.in":             membership_restore_action,
+    "iam.user.membership_suspension_status.in":   membership_suspension_status_action,
 }
 
 DOMAIN_EVENTS = {
@@ -117,4 +132,9 @@ DOMAIN_EVENTS = {
     "iam.tenant_application_route.create.in": ["iam.tenant_application_route.created"],
     "iam.tenant_application_route.update.in": ["iam.tenant_application_route.updated"],
     "iam.tenant_application_route.toggle.in": ["iam.tenant_application_route.toggled"],
+    # Igual que el resto de la familia iam.*: sin domain events propios, la
+    # respuesta se serializa como "<event>.out".
+    "iam.user.suspend_membership.in":           [],
+    "iam.user.restore_membership.in":            [],
+    "iam.user.membership_suspension_status.in":  [],
 }

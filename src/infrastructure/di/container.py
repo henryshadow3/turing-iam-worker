@@ -9,6 +9,7 @@ from infrastructure.repositories.application_postgres_repository import Applicat
 from infrastructure.repositories.tenant_application_postgres_repository import TenantApplicationPostgresRepository
 from infrastructure.repositories.application_membership_postgres_repository import ApplicationMembershipPostgresRepository
 from infrastructure.repositories.tenant_application_route_postgres_repository import TenantApplicationRoutePostgresRepository
+from infrastructure.repositories.membership_suspension_postgres_repository import MembershipSuspensionPostgresRepository
 
 
 class RepositoryType:
@@ -21,6 +22,7 @@ class RepositoryType:
     TENANT_APPLICATION       = "TENANT_APPLICATION"
     APPLICATION_MEMBERSHIP   = "APPLICATION_MEMBERSHIP"
     TENANT_APPLICATION_ROUTE = "TENANT_APPLICATION_ROUTE"
+    MEMBERSHIP_SUSPENSION    = "MEMBERSHIP_SUSPENSION"
 
 
 class DependencyContainer:
@@ -49,6 +51,8 @@ class DependencyContainer:
             return ApplicationMembershipPostgresRepository(sql_session=sql_session)
         if repository_name == RepositoryType.TENANT_APPLICATION_ROUTE:
             return TenantApplicationRoutePostgresRepository(sql_session=sql_session)
+        if repository_name == RepositoryType.MEMBERSHIP_SUSPENSION:
+            return MembershipSuspensionPostgresRepository(sql_session=sql_session)
         raise ValueError(f"Repository '{repository_name}' not found in registry.")
 
     def close(self):

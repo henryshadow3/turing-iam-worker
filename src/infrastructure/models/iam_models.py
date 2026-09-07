@@ -145,6 +145,30 @@ class TenantApplicationRoute(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class MembershipSuspension(SQLModel, table=True):
+    """Snapshot fila-por-fila de una suspensión global de membresía
+    (turing.membership_suspensions, migración 019, W11 T-SP4-T2-I1).
+
+    Registra qué filas de UserMembership/ApplicationMembership estaban
+    is_active=true justo antes de un apagón global (iam.user.
+    suspend_membership.in), para que la restauración
+    (iam.user.restore_membership.in) reactive EXACTAMENTE esas filas y
+    ninguna otra -- nunca una fila que ya estaba inactiva por otra razón
+    antes del apagón. table_name/row_id son una referencia polimórfica
+    (sin FK físico) a 'user_memberships' o 'application_memberships'.
+    """
+    __tablename__ = "membership_suspensions"
+    __table_args__ = {"schema": "turing"}
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID
+    table_name: str
+    row_id: uuid.UUID
+    suspended_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    restored_at: Optional[datetime] = None
+    is_active_suspension: bool = Field(default=True)
+
+
 class AccessRequest(SQLModel, table=True):
     __tablename__ = "access_requests"
     __table_args__ = {"schema": "turing"}
