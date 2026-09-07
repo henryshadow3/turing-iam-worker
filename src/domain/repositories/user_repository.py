@@ -13,6 +13,8 @@ class UserRepository(ABC):
         is_active: Optional[bool] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
+        application_id: Optional[str] = None,
+        app_access_status: Optional[str] = None,
     ) -> Result[Dict[str, Any], str]:
         pass
 

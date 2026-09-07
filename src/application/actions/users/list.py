@@ -16,6 +16,13 @@ def user_list_action(data: Dict[str, Any], context: Dict[str, Any], container) -
     (platform_role exacto), is_active (bool), limit/offset (paginación real).
     Ningún caller que no envíe estos campos ve cambio de comportamiento --
     solo se agrega "total" a la respuesta, que es aditivo.
+
+    T-SP4-T2-I1-W12 (aditivo): application_id filtra server-side a los
+    usuarios relevantes para una aplicación del catálogo -- alimenta las
+    tabs por aplicación de Users.jsx (ver UserPostgresRepository.list_all
+    para el detalle de los dos grupos "access"/"affiliated_no_access").
+    app_access_status opcional acota a uno solo de esos dos grupos (para
+    paginar cada grupo por separado en el frontend).
     """
     try:
         search = data.get("search")
@@ -23,6 +30,8 @@ def user_list_action(data: Dict[str, Any], context: Dict[str, Any], container) -
         is_active = data.get("is_active")
         limit = data.get("limit")
         offset = data.get("offset")
+        application_id = data.get("application_id")
+        app_access_status = data.get("app_access_status")
 
         with container.create_sql_session_manager() as sql_session:
             repo = container.create_repository(RepositoryType.USER, sql_session)
@@ -32,6 +41,8 @@ def user_list_action(data: Dict[str, Any], context: Dict[str, Any], container) -
                 is_active=is_active,
                 limit=limit,
                 offset=offset,
+                application_id=application_id,
+                app_access_status=app_access_status,
             )
         if isinstance(result, Ok):
             payload = result.ok_value
