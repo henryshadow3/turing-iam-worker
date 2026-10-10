@@ -182,3 +182,7 @@ class AccessRequest(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     resolved_at: Optional[datetime] = None
     resolved_by: Optional[uuid.UUID] = None
+    # Aplicación que originó la solicitud (migración 031 de db-turing, B-SP8-7).
+    # NULL en solicitudes previas o de clientes que no la envían: en ese caso
+    # aprobar solo crea la afiliación al tenant (comportamiento histórico).
+    application_id: Optional[uuid.UUID] = None
